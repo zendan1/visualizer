@@ -51,25 +51,20 @@ def parse_installed_packages(package_file: str) -> Dict[str, List[str]]:
         with open(package_file, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                print(f"Читается строка: {line}")  # Отладка
                 if line.startswith('P:'):
                     if current_package:
                         packages_db[current_package] = dependencies
-                        print(f"Добавлен пакет: {current_package} с зависимостями: {dependencies}")  # Отладка
                     current_package = line[2:]
                     dependencies = []
                 elif line.startswith('D:'):
                     dep_line = line[2:]
                     deps = dep_line.split()
                     dependencies.extend(deps)
-                    print(f"Добавлены зависимости: {deps}")  # Отладка
             if current_package:
                 packages_db[current_package] = dependencies
-                print(f"Добавлен пакет: {current_package} с зависимостями: {dependencies}")  # Отладка
     except Exception as e:
         raise IOError(f"Ошибка чтения файла пакетов: {e}")
 
-    print(f"Полученная база пакетов: {packages_db}")  # Итоговая база для отладки
     return packages_db
 
 def build_dependency_graph(package_name: str, packages_db: Dict[str, List[str]]) -> Dict[str, List[str]]:
@@ -111,34 +106,28 @@ def generate_image(plantuml_code: str, plantuml_path: str, output_image_path: st
     with tempfile.NamedTemporaryFile('w', delete=False, suffix='.puml') as tmp:
         tmp.write(plantuml_code)
         tmp_path = tmp.name
-        print(f"Временный файл PlantUML создан: {tmp_path}")  # Логирование
+        print(f"Временный файл PlantUML создан: {tmp_path}")
 
     try:
-        # Команда для запуска PlantUML на Windows
+        # Команда для запуска PlantUML
         # PlantUML запускается через java -jar plantuml.jar
         command = ['java', '-jar', plantuml_path, '-tpng', tmp_path, '-o', os.path.dirname(output_image_path)]
-        print(f"Выполняется команда: {' '.join(command)}")  # Логирование
         result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"PlantUML завершился с кодом: {result.returncode}")  # Логирование
 
         # Определяем путь к сгенерированному изображению в директории вывода
         generated_image = os.path.join(os.path.dirname(output_image_path), os.path.splitext(os.path.basename(tmp_path))[0] + '.png')
-        print(f"Ожидаемый путь сгенерированного изображения: {generated_image}")  # Логирование
 
         if not os.path.exists(generated_image):
             raise FileNotFoundError("PlantUML не сгенерировал изображение.")
 
         # Перемещаем сгенерированное изображение в желаемое место (переименовываем)
         os.rename(generated_image, output_image_path)
-        print(f"Изображение перемещено в: {output_image_path}")  # Логирование
     except subprocess.CalledProcessError as e:
         stderr = e.stderr.decode().strip()
-        print(f"PlantUML stderr: {stderr}")  # Логирование
         raise RuntimeError(f"Ошибка при выполнении PlantUML: {stderr}")
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
-            print(f"Временный файл PlantUML удалён: {tmp_path}")  # Логирование
 
 def main():
     if len(sys.argv) != 2:
@@ -147,16 +136,16 @@ def main():
     config_path = sys.argv[1]
     try:
         plantuml_path, package_name, output_image_path, package_db_path = parse_config(config_path)
-        print(f"PlantUML Path: {plantuml_path}")  # Отладка
-        print(f"Package Name: {package_name}")  # Отладка
-        print(f"Output Image Path: {output_image_path}")  # Отладка
-        print(f"Package Database Path: {package_db_path}")  # Отладка
+        print(f"PlantUML Path: {plantuml_path}")
+        print(f"Package Name: {package_name}")
+        print(f"Output Image Path: {output_image_path}")
+        print(f"Package Database Path: {package_db_path}")
 
         packages_db = parse_installed_packages(package_db_path)
         dependency_graph = build_dependency_graph(package_name, packages_db)
-        print(f"Dependency Graph: {dependency_graph}")  # Отладка
         plantuml_code = generate_plantuml(dependency_graph)
-        print(f"Generated PlantUML Code:\n{plantuml_code}")  # Отладка
+        print("Generated PlantUML Code:")
+        print(plantuml_code)
         generate_image(plantuml_code, plantuml_path, output_image_path)
         print(f"Граф зависимостей успешно сохранен в {output_image_path}")
     except Exception as e:
