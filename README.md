@@ -23,13 +23,6 @@
 python visualizer.py config.xml
 ```
 
-### Пример использования
-
-```bash
-python visualizer.py config.xml
-```
-
-
 ## Тестирование программы
 
 Все функции визуализатора зависимостей покрыты тестами с использованием `unittest`.
